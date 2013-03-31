@@ -31,11 +31,37 @@ lvector.Cloudant = lvector.GeoJSONLayer.extend({
     options: {
         dbName: null,
         designDoc: null,
-        indexName: null
+        indexName: null,
+        query: null
     },
     
     _requiredParams: ["dbName", "designDoc", "indexName"],
     
+    setQuery: function(query) {
+        this.options.query = query;
+    },
+
+    toWkt: function(layer) {
+        // https://gist.github.com/bmcbride/4248238
+        var lng, lat, coords = [];
+        if (layer instanceof L.Polygon || layer instanceof L.Polyline) {
+            $.each(layer.getLatLngs(), function(index,value) {
+                coords.push(value.lng + " " + value.lat);
+                if (index === 0) {
+                    lng = value.lng;
+                    lat = value.lat;
+                }
+            });
+            if (layer instanceof L.Polygon) {
+                return "POLYGON((" + coords.join(",") + "," + lng + " " + lat + "))";
+            } else if (layer instanceof L.Polyline) {
+                return "LINESTRING(" + coords.join(",") + ")";
+            }
+        } else if (layer instanceof L.Marker) {
+            return "POINT(" + layer.getLatLng().lng + " " + layer.getLatLng().lat + ")";
+        }
+    },
+
     _getFeatures: function() {
         // If we don't have a uniqueField value it's hard to tell if new features are duplicates so clear them all
         if (!this.options.uniqueField) {
@@ -51,13 +77,32 @@ lvector.Cloudant = lvector.GeoJSONLayer.extend({
             "?callback=" + this._globalPointer + "._processFeatures"; // need this for jsonp
 
         if (!this.options.showAll) {
-            url += "&bbox=" + this.options.map.getBounds().toBBoxString() +
-            "/" + "&include_docs=true"; // Build bbox geometry
+            if (this.options.query == null)
+            {
+                url += "&bbox=" + this.options.map.getBounds().toBBoxString() +
+                "/" + "&include_docs=true"; // Build bbox geometry
+            }
+            else
+            {
+                var query = this.options.query;
+                if ((query.layerType == "polygon") || 
+                        (query.layerType == "rectangle"))
+                {
+                    url += "&g=" + this.toWkt(query.layer) +
+                    "&include_docs=true";
+                }
+                else
+                {
+                    // circle / ellipse
+                    var latlon = query.layer.getLatLng();
+                    url += "&lat=" + latlon.lat + "&lon=" + latlon.lng + 
+                    "&radius=" + query.layer.getRadius() + "&include_docs=true";
+                }
+            }
         }
         
         // JSONP request
         this._makeJsonpRequest(url);
         
-    }
-    
+    }    
 });

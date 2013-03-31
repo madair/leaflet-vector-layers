@@ -555,7 +555,6 @@ lvector.Layer = lvector.Class.extend({
             
             // Loop through the return features
             for (var i = 0; i < data.features.length; i++) {
-            
                 // if AGS layer type assigned "attributes" to "properties" to keep everything looking like GeoJSON Features
                 if (this instanceof lvector.EsriJSONLayer) {
                     data.features[i].properties = data.features[i].attributes;
@@ -628,7 +627,6 @@ lvector.Layer = lvector.Class.extend({
                     }
                     
                 }
-                
                 // If the feature isn't already or the map OR the "uniqueField" attribute doesn't exist
                 if (!onMap || !this.options.uniqueField) {
                     

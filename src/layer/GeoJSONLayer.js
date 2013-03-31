@@ -10,7 +10,6 @@ lvector.GeoJSONLayer = lvector.Layer.extend({
         // Create a variable for a single vector and for multi part vectors.
         //
         var vector, vectors;
-        
         switch (geometry.type) {
             case "Point":
                 vector = new L.Marker(new L.LatLng(geometry.coordinates[1], geometry.coordinates[0]), opts);
